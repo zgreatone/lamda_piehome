@@ -1,0 +1,25 @@
+PowerOff turn off {Device}
+PowerOff power off {Device}
+PowerOff shut off {Device}
+PowerOff shutoff {Device}
+PowerOn turn on {Device}
+PowerOn power on {Device}
+PowerToggle power toggle {Device}
+PowerToggle toggle {Device} power
+Arm arm {Device}
+Arm enable {Device}
+Arm activate {Device}
+DisArm disarm {Device}
+DisArm disable {Device}
+DisArm deactivate {Device}
+NestMode set nest mode to {Mode}
+NestStatus set nest status to {Status}
+NestStatus set status of nest to {Status}
+NestLevel set nest level to {Level} degrees
+NestLevel set nest level to {Level}
+GetStatus status check
+GetStatus what's your status
+GetStatus home status
+GetStatus how's everything
+GetSensorStatus what is the status of {Device}
+GetSensorStatus status of {Device}
