@@ -7,8 +7,6 @@ var https = require("https");
 var querystring = require('querystring');
 var appTag = "HomeAutomation";
 var homeApiKey = "piehome";
-var verifyApplicationId = true;
-var alexaSkillApplicationId = "";
 
 var connectionOptions = {
     host: 'home.zgreatone.net',
@@ -18,8 +16,6 @@ var connectionOptions = {
     headers: {},
     rejectUnauthorized: false
 };
-var REMOTE_CLOUD_BASE_PATH = '/';
-var REMOTE_CLOUD_HOSTNAME = 'www.amazon.com';
 
 /**
  * Main entry point.
@@ -77,119 +73,37 @@ exports.handler = function (event, context) {
  */
 function handleDiscovery(accessToken, context) {
 
-    /**
-     * Crafting the response header
-     */
-    var headers = {
-        namespace: 'Discovery',
-        name: 'DiscoverAppliancesResponse',
-        payloadVersion: '1'
-    };
+    var accessToken = event.payload.accessToken.trim();
 
-    /**
-     * Response body will be an array of discovered devices.
-     */
-    var appliances = [];
+    var queryParams = connectionOptions;
+    queryParams.method = "GET";
 
-    var applianceDiscovered = {
-        applianceId: 'Sample-Device-ID',
-        manufacturerName: 'SmartThings',
-        modelName: 'ST01',
-        version: 'VER01',
-        friendlyName: 'Sample Name',
-        friendlyDescription: 'the light in kitchen',
-        isReachable: true,
-        additionalApplianceDetails: {
-            /**
-             * OPTIONAL:
-             * We can use this to persist any appliance specific metadata.
-             * This information will be returned back to the driver when user requests
-             * action on this appliance.
-             */
-            'fullApplianceId': '2cd6b650-c0h0-4062-b31d-7ec2c146c5ea'
-        }
-    };
-    appliances.push(applianceDiscovered);
 
-    /**
-     * Craft the final response back to Alexa Connected Home Skill. This will include all the
-     * discoverd appliances.
-     */
-    var payloads = {
-        discoveredAppliances: appliances
-    };
-    var result = {
-        header: headers,
-        payload: payloads
-    };
+    queryHome(accessToken, queryParams, event, context, function (event, context, output) {
 
-    log('Discovery', result);
+        var jsonObject = JSON.parse(output);
 
-    context.succeed(result);
-}
-
-function handleSwitchOnOffRequest(event, context, applianceId, accessToken) {
-    /**
-     * Make a remote call to execute the action based on accessToken and the applianceId and the switchControlAction
-     * Some other examples of checks:
-     *    validate the appliance is actually reachable else return TARGET_OFFLINE error
-     *    validate the authentication has not expired else return EXPIRED_ACCESS_TOKEN error
-     * Please see the technical documentation for detailed list of errors
-     */
-    var basePath = '';
-    if (event.payload.generateError === 'TURN_ON') {
-        basePath = REMOTE_CLOUD_BASE_PATH + '/' + applianceId + '/on?access_token=' + accessToken;
-    } else if (event.payload.generateError === 'TURN_OFF') {
-        basePath = REMOTE_CLOUD_BASE_PATH + '/' + applianceId + '/of?access_token=' + accessToken;
-    }
-
-    var options = {
-        hostname: REMOTE_CLOUD_HOSTNAME,
-        port: 443,
-        path: REMOTE_CLOUD_BASE_PATH,
-        headers: {
-            accept: '*/*'
-        }
-    };
-
-    var serverError = function (e) {
-        log('Error', e.message);
         /**
-         * Craft an error response back to Alexa Connected Home Skill
+         * Response body will be an array of discovered devices.
          */
-        context.fail(generateError('SwitchOnOffRequest', 'DEPENDENT_SERVICE_UNAVAILABLE', 'Unable to connect to server'));
-    };
+        var appliances = jsonObject.appliances;
 
-    var callback = function (response) {
-        var str = '';
+        /**
+         * Craft the final response back to Alexa Connected Home Skill. This will include all the
+         * discoverd appliances.
+         */
+        var payloads = {
+            discoveredAppliances: appliances
+        };
 
-        response.on('data', function (chunk) {
-            str += chunk.toString('utf-8');
-        });
+        var result = generateSuccess('Discovery', 'DiscoverAppliancesResponse', payloads)
 
-        response.on('end', function () {
-            /**
-             * Test the response from remote endpoint (not shown) and craft a response message
-             * back to Alexa Connected Home Skill
-             */
-            log('done with result');
-            var payloads = {
-                success: true
-            };
+        log('Discovery', result);
 
-            var result = generateSuccess('Control', 'SwitchOnOffResponse', payloads);
-            log('Done with result', result);
-            context.succeed(result);
-        });
+        context.succeed(result);
+    });
 
-        response.on('error', serverError);
-    };
 
-    /**
-     * Make an HTTPS call to remote endpoint.
-     */
-    https.get(options, callback)
-        .on('error', serverError).end();
 }
 
 
@@ -216,16 +130,9 @@ function handleControl(event, context) {
     }
 
     if (event.header.namespace === 'Control' && event.header.name === 'SwitchOnOffRequest') {
-
-        /**
-         * Retrieve the appliance id and accessToken from the incoming message.
-         */
-        var applianceId = event.payload.appliance.applianceId;
-        var accessToken = event.payload.accessToken.trim();
-        log('applianceId', applianceId);
-
-        handleSwitchOnOffRequest(event, context, applianceId, accessToken);
+        handleControlRequest('SwitchOnOffResponse', event, context);
     } else if (event.header.namespace === 'Control' && event.header.name === 'AdjustNumericalSettingRequest') {
+        handleControlRequest('AdjustNumericalSettingResponse', event, context);
 
     }
 }
@@ -244,6 +151,134 @@ function handleSystem(event, context) {
         context.fail(generateError('HealthCheckRequest', 'UNSUPPORTED_OPERATION', 'Unrecognized operation'));
     }
 
+    /**
+     * Test the response from remote endpoint (not shown) and craft a response message
+     * back to Alexa Connected Home Skill
+     */
+    log('done with result');
+    var payloads = {
+        isHealthy: true,
+        "description": "The system is currently healthy"
+    };
+
+    var result = generateSuccess('System', 'HealthCheckResponse', payloads);
+    log('Done with result', result);
+    context.succeed(result);
+
+}
+
+
+function handleControlRequest(responseName, event, context) {
+
+    var accessToken = event.payload.accessToken.trim();
+
+    var queryParams = connectionOptions;
+    queryParams.method = "POST";
+
+
+    queryHome(accessToken, queryParams, event, context, function (event, context, output) {
+        /**
+         * Test the response from remote endpoint (not shown) and craft a response message
+         * back to Alexa Connected Home Skill
+         */
+        log('done with result');
+        var payloads = {
+            success: true
+        };
+
+        var result = generateSuccess('Control', responseName, payloads);
+        log('Done with result', result);
+        context.succeed(result);
+    });
+}
+
+function handleRequestError(event, context, message, statusCode) {
+    log('Error', e.message);
+    /**
+     * Craft an error response back to Alexa Connected Home Skill
+     */
+    context.fail(generateError(event.header.namespace, event.header.name, 'DEPENDENT_SERVICE_UNAVAILABLE', 'Unable to connect to server'));
+}
+
+/**
+ *
+ * @param accessToken
+ * @param connectionParams
+ * @param event
+ * @param context
+ * @param callback
+ */
+function queryHome(accessToken, connectionParams, event, context, callback) {
+    var requestData = event
+    var postData = "";
+
+    /* add access token to url */
+    connectionParams.path = connectionParams.path + "&" + "access_token" + "=" + accessToken;
+
+    //if post request set headers for body
+    if (connectionParams.method == "POST") {
+
+        postData = JSON.stringify(requestData);
+        console.log("stringified data :[" + postData + "]")
+        var headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': postData.length
+        };
+        connectionParams.headers = headers;
+    } else if (connectionParams.method == "GET") {
+        //TODO user querystring.stringify here
+        Object.keys(requestData).forEach(function (key) {
+            connectionParams.path = connectionParams.path + "&" + key + "=" + requestData[key];
+        });
+    }
+
+    var serverError = function (e) {
+        console.log('ERROR: ' + e.message);
+        handleRequestError(event, context, e.message, 500);
+    };
+
+    var requestCallback = function (response) {
+        console.log('request STATUS: ' + response.statusCode);
+        var statusCode = response.statusCode;
+
+        var output = '';
+
+        console.log(connectionParams.host + ':' + response.statusCode);
+        response.setEncoding('utf8');
+
+        // Buffer the body entirely for processing as a whole.
+        response.on('data', function (chunk) {
+            output += chunk;
+        });
+
+        // ...and/or process the entire body here.
+        response.on('end', function () {
+            console.log("successfully completed request.");
+            if (statusCode == 200) {
+                callback(event, context, output);
+            } else {
+                handleRequestError(event, context, output, statusCode);
+            }
+        });
+
+        response.on('error', serverError);
+    };
+
+    /**
+     * Make an HTTPS call to remote endpoint.
+     */
+    var request = https.request(connectionParams, requestCallback);
+
+    request.on('error', serverError);
+
+    /**
+     * Write data to request if post request
+     */
+    if (connectionParams.method == "POST") {
+        console.log("request is post and post data to be written");
+        request.write(postData);
+    }
+    request.end();
 }
 
 /**
