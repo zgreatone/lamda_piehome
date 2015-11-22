@@ -27,9 +27,9 @@ exports.handler = function (event, context) {
          * Uncomment this if statement and replace application.id with yours
          * to prevent other voice applications from using this function.
          */
-        if(verifyApplicationId){
+        if (verifyApplicationId) {
             if (event.session.application.applicationId !== alexaSkillApplicationId) {
-                console.log("applicationId="+event.session.application.applicationId+" is NOT valid")
+                console.log("applicationId=" + event.session.application.applicationId + " is NOT valid")
                 context.fail("Invalid Application ID");
             }
         }
@@ -224,8 +224,12 @@ function queryHome(intent, session, callback, connectionParams, requestData, int
         });
     }
 
+    var serverError = function (e) {
+        console.log('ERROR: ' + e.message);
+        intentCallback(intent, session, callback, false, e.message);
+    };
 
-    var req = https.request(connectionParams, function (res) {
+    var requestCallback = function (res) {
         console.log('request STATUS: ' + res.statusCode);
         var statusCode = res.statusCode;
 
@@ -248,52 +252,25 @@ function queryHome(intent, session, callback, connectionParams, requestData, int
                 intentCallback(intent, session, callback, false, output);
             }
         });
-    });
 
-    req.on('error', function (e) {
-        console.log('ERROR: ' + e.message);
-        intentCallback(intent, session, callback, false, e.message);
-    });
+        res.on('error', serverError);
+    };
 
+    /**
+     * Make an HTTPS call to remote endpoint.
+     */
+    var req = https.request(connectionParams, requestCallback);
 
+    req.on('error', serverError);
+
+    /**
+     * Write data to request if post request
+     */
     if (connectionParams.method == "POST") {
         console.log("request is post and post data to be written");
         req.write(postData);
     }
     req.end();
-
-
-    var callback = function(response) {
-        var str = '';
-
-        response.on('data', function(chunk) {
-            str += chunk.toString('utf-8');
-        });
-
-        response.on('end', function() {
-            /**
-             * Test the response from remote endpoint (not shown) and craft a response message
-             * back to Alexa Connected Home Skill
-             */
-            log('done with result');
-            var headers = {
-                namespace: 'Control',
-                name: 'SwitchOnOffResponse',
-                payloadVersion: '1'
-            };
-            var payloads = {
-                success: true
-            };
-            var result = {
-                header: headers,
-                payload: payloads
-            };
-            log('Done with result', result);
-            context.succeed(result);
-        });
-
-        response.on('error', serverError);
-    };
 }
 
 /**
@@ -317,6 +294,7 @@ function processQueryResponse(intent, session, callback, success, response) {
             var jsonObject = JSON.parse(response);
             // If we wanted to initialize the session to have some attributes we could add those here.
             speechOutput = jsonObject.speechOutput;
+
             // If the user either does not reply to the welcome message or says something that is not
             // understood, they will be prompted again with this text.
             repromptText = "If you have another request do so now.";
