@@ -86,7 +86,7 @@ function handleDiscovery(event, context) {
         /**
          * Response body will be an array of discovered devices.
          */
-        var appliances = jsonObject.appliances;
+        var appliances = jsonObject.data;
 
         /**
          * Craft the final response back to Alexa Connected Home Skill. This will include all the
@@ -179,18 +179,23 @@ function handleControlRequest(responseName, event, context) {
     queryHome(accessToken, queryParams, event, context, function (event, context, output) {
 
         var jsonObject = JSON.parse(output);
-        /**
-         * Test the response from remote endpoint (not shown) and craft a response message
-         * back to Alexa Connected Home Skill
-         */
-        log('done with result');
-        var payloads = {
-            success: true
-        };
 
-        var result = generateSuccess('Control', responseName, payloads);
-        log('Done with result', result);
-        context.succeed(result);
+        if (jsonObject.success == true) {
+            /**
+             * Test the response from remote endpoint (not shown) and craft a response message
+             * back to Alexa Connected Home Skill
+             */
+            log('done with result');
+            var payloads = {
+                success: true
+            };
+
+            var result = generateSuccess('Control', responseName, payloads);
+            log('Done with result', result);
+            context.succeed(result);
+        } else {
+            handleRequestError(event, context, jsonObject.data, 200)
+        }
     });
 }
 
@@ -199,6 +204,9 @@ function handleRequestError(event, context, message, statusCode) {
     if (statusCode == 500) {
         context.fail(generateError(event.header.namespace, event.header.name,
             'DEPENDENT_SERVICE_UNAVAILABLE', 'Unable to connect to server'));
+    } else if( statusCode == 501) {
+        context.fail(generateError(event.header.namespace, event.header.name,
+            'UNSUPPORTED_OPERATION', 'Unable to connect to server'));
     } else {
         var jsonObject = JSON.parse(message);
         /**
