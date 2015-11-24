@@ -71,7 +71,7 @@ exports.handler = function (event, context) {
  * We are expected to respond back with a list of appliances that we have discovered for a given
  * customer.
  */
-function handleDiscovery(accessToken, context) {
+function handleDiscovery(event, context) {
 
     var accessToken = event.payload.accessToken.trim();
 
@@ -177,6 +177,8 @@ function handleControlRequest(responseName, event, context) {
 
 
     queryHome(accessToken, queryParams, event, context, function (event, context, output) {
+
+        var jsonObject = JSON.parse(output);
         /**
          * Test the response from remote endpoint (not shown) and craft a response message
          * back to Alexa Connected Home Skill
@@ -193,11 +195,18 @@ function handleControlRequest(responseName, event, context) {
 }
 
 function handleRequestError(event, context, message, statusCode) {
-    log('Error', e.message);
-    /**
-     * Craft an error response back to Alexa Connected Home Skill
-     */
-    context.fail(generateError(event.header.namespace, event.header.name, 'DEPENDENT_SERVICE_UNAVAILABLE', 'Unable to connect to server'));
+    log('Error', message);
+    if (statusCode == 500) {
+        context.fail(generateError(event.header.namespace, event.header.name,
+            'DEPENDENT_SERVICE_UNAVAILABLE', 'Unable to connect to server'));
+    } else {
+        var jsonObject = JSON.parse(message);
+        /**
+         * Craft an error response back to Alexa Connected Home Skill
+         */
+        context.fail(generateError(event.header.namespace, event.header.name,
+            'DEPENDENT_SERVICE_UNAVAILABLE', 'Unable to connect to server'));
+    }
 }
 
 /**
@@ -226,10 +235,8 @@ function queryHome(accessToken, connectionParams, event, context, callback) {
         };
         connectionParams.headers = headers;
     } else if (connectionParams.method == "GET") {
-        //TODO user querystring.stringify here
-        Object.keys(requestData).forEach(function (key) {
-            connectionParams.path = connectionParams.path + "&" + key + "=" + requestData[key];
-        });
+        connectionParams.path = connectionParams.path + "&" + 'namespace' + "=" + event.header.namespace;
+        connectionParams.path = connectionParams.path + "&" + 'name' + "=" + event.header.name;
     }
 
     var serverError = function (e) {
