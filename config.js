@@ -40,8 +40,8 @@ console.debug = function () {
 
 // Connection information to connect to pie home service
 var connectionOptions = {
-    host: 'home.zgreatone.net',
-    port: 8888,
+    host: _.isEmpty(process.env.SERVICE_HOST) ? "localhost" : process.env.SERVICE_HOST,
+    port: _.isEmpty(process.env.SERVICE_PORT) ? 9432 : process.env.SERVICE_PORT,
     path: '/alexa_skill?api_key=' + _.isEmpty(process.env.SERVICE_API_KEY) ? "notset" : process.env.SERVICE_API_KEY,
     method: 'GET',
     headers: {},
