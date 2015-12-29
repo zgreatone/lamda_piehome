@@ -4,7 +4,7 @@ var _ = require("underscore");
 var util = require('util');
 var winston = require('winston');
 
-require('dotenv').load();
+require('dotenv').config({silent: true});
 var ENVDEV = (_.isEmpty(process.env.ENVCONFIG) || process.env.ENVCONFIG === "production") ? false : true;
 
 var logger = new (winston.Logger)({
@@ -42,7 +42,7 @@ console.debug = function () {
 var connectionOptions = {
     host: 'home.zgreatone.net',
     port: 8888,
-    path: '/alexa_skill?api_key=' + homeApiKey,
+    path: '/alexa_skill?api_key=' + _.isEmpty(process.env.SERVICE_API_KEY) ? "notset" : process.env.SERVICE_API_KEY,
     method: 'GET',
     headers: {},
     rejectUnauthorized: false
@@ -50,6 +50,6 @@ var connectionOptions = {
 
 module.exports = {
     env: _.isEmpty(process.env.ENVCONFIG) ? "production" : process.env.ENVCONFIG,
-    askAppId: process.env.ASK_APPID,
+    askAppId: process.env.ASK_APP_ID,
     connectionOptions: connectionOptions
 };

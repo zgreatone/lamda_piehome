@@ -24,8 +24,32 @@ module.exports = function (grunt) {
                     {flatten: true, src: ['path/**'], dest: 'internal_folder4/', filter: 'isFile'} // flattens results to a single level
                 ]
             }
+        },
+        jasmine_node: {
+            task_name: {
+                options: {
+                    coverage: {},
+                    forceExit: true,
+                    match: '.',
+                    matchAll: false,
+                    specFolders: ['spec'],
+                    extensions: 'js',
+                    specNameMatcher: 'spec',
+                    captureExceptions: true,
+                    junitreport: {
+                        report: false,
+                        savePath: './build/reports/jasmine/',
+                        useDotNotation: true,
+                        consolidate: true
+                    }
+                },
+                src: ['**/*.js']
+            }
         }
     });
+
+    // Load the jasmine node coverage task
+    grunt.loadNpmTasks('grunt-jasmine-node-coverage');
 
     // Load the plugin that provides the "uglify" task.
     grunt.loadNpmTasks('grunt-contrib-uglify');
@@ -34,6 +58,6 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks('grunt-contrib-compress');
 
     // Default task(s).
-    grunt.registerTask('default', ['uglify']);
+    grunt.registerTask('default', ['jasmine_node']);
 
 };
