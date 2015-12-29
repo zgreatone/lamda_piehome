@@ -11,9 +11,7 @@ describe("Pie Home Alexa Lambda Function", function () {
     it("should throw exception", function (done) {
 
         var validatorFunction = function (data, resp) {
-            if (resp === "SUCCESS") {
-                throw "onSessionStarted: should not be successful.";
-            } else {
+            if (resp === "FAILURE") {
                 expect(data).toBe("Invalid applicationId");
             }
             done();
