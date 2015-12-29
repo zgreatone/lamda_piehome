@@ -1,0 +1,103 @@
+{
+  "intents": [
+    {
+      "intent": "PowerOff",
+      "slots": [
+        {
+          "name": "Device",
+          "type": "HOME_DEVICE"
+        }
+      ]
+    },
+    {
+      "intent": "PowerOn",
+      "slots": [
+        {
+          "name": "Device",
+          "type": "HOME_DEVICE"
+        }
+      ]
+    },
+    {
+      "intent": "PowerToggle",
+      "slots": [
+        {
+          "name": "Device",
+          "type": "HOME_DEVICE"
+        }
+      ]
+    },
+    {
+      "intent": "Arm",
+      "slots": [
+        {
+          "name": "Device",
+          "type": "HOME_DEVICE"
+        }
+      ]
+    },
+    {
+      "intent": "DisArm",
+      "slots": [
+        {
+          "name": "Device",
+          "type": "HOME_DEVICE"
+        }
+      ]
+    },
+    {
+      "intent": "GetStatus",
+      "slots": [
+        {
+          "name": "Room",
+          "type": "AMAZON.LITERAL"
+        }
+      ]
+    },
+    {
+      "intent": "NestMode",
+      "slots": [
+        {
+          "name": "Mode",
+          "type": "NEST_MODE"
+        }
+      ]
+    },
+    {
+      "intent": "NestLevel",
+      "slots": [
+        {
+          "name": "Level",
+          "type": "AMAZON.NUMBER"
+        }
+      ]
+    },
+    {
+      "intent": "NestStatus",
+      "slots": [
+        {
+          "name": "Status",
+          "type": "NEST_STATUS"
+        }
+      ]
+    },
+    {
+      "intent": "GetSensorStatus",
+      "slots": [
+        {
+          "name": "Device",
+          "type": "HOME_DEVICE"
+        }
+      ]
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    }
+  ]
+}

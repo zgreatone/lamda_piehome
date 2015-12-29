@@ -8,7 +8,7 @@ custom_slots:
   values:
     - 'Away'
     - 'Home'
-- type: 'HOME_DEVICE'
+- type: 'HOME_DEVICE.txt'
   values: 
   	- Sony TV
     - Xfinity DVR
